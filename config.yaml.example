@@ -1,0 +1,59 @@
+# JKK + UR Tracker — Configuration Template
+# Copy this file to config.yaml and fill in your values.
+# config.yaml is git-ignored so your credentials are never committed.
+
+check_interval_minutes: 5
+
+filters:
+  # Ward / Area (区市名) — applies to BOTH JKK and UR listings
+  wards: ["新宿区", "江東区", "品川区", "江戸川区"]
+
+  # Floor plan (間取り) — applies to BOTH JKK and UR
+  floor_plans: ["2DK", "2LDK", "3DK", "3LDK"]
+
+  # Monthly rent range in yen
+  rent_min: null
+  rent_max: null
+
+  # Floor area in square metres
+  area_min: null
+  area_max: null
+
+  # Maximum building age in years (JKK only — UR does not provide this)
+  building_age_max: null
+
+  # Floor level range (now works for UR listings too)
+  floor_min: null
+  floor_max: null
+
+  # Restrict to specific sources (optional). Leave empty to include all sources.
+  # Example: ["UR"] to only get notified about UR listings
+  sources: []
+
+notifications:
+  notify_all_changes: true
+  notify_filtered_matches: true
+
+# Telegram Bot — sends one message per added/removed listing to a group or chat.
+# Setup:
+#   1. Message @BotFather on Telegram → /newbot → copy the bot token.
+#   2. Add the bot to your group.
+#   3. Send /start in the group, then open in browser:
+#      https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
+#      Find "chat": {"id": -XXXXXXXXXX} — that is your chat_id (negative for groups).
+telegram:
+  enabled: false
+  bot_token: ""                # From @BotFather
+  chat_id: ""                  # Group/chat ID (negative number for groups)
+  only_filtered_matches: false # true = only notify listings matching your filters above
+  digest_time: ""              # Daily summary time HH:MM (server local time / JST). E.g. "08:00". Leave empty to disable.
+
+# UR Chintai settings
+ur:
+  enabled: true
+  tdfk: "13"                                          # Tokyo prefecture code (do not change)
+  areas: ["01", "02", "03", "04", "05", "06"]        # Tokyo area codes to scrape
+
+# Transit cache settings
+transit:
+  graph_refresh_days: 90

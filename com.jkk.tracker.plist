@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+    "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.jkk.tracker</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>/Users/01572605/Desktop/PetProjects/JKK_UR_Tracker/main.py</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/01572605/Desktop/PetProjects/JKK_UR_Tracker</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/01572605/Desktop/PetProjects/JKK_UR_Tracker/logs/stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/01572605/Desktop/PetProjects/JKK_UR_Tracker/logs/stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+</dict>
+</plist>
