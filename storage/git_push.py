@@ -7,6 +7,7 @@ Skipped when running as a frozen PyInstaller executable (no git repo present).
 """
 
 import logging
+import os
 import subprocess
 import sys
 import threading
@@ -27,6 +28,8 @@ def _run(cmd: list[str]) -> subprocess.CompletedProcess:
 def _push() -> None:
     if getattr(sys, "frozen", False):
         return  # No git repo in a PyInstaller bundle
+    if os.environ.get("CI"):
+        return  # CI workflow handles the git push itself
 
     try:
         # Only commit if docs/index.html has actually changed (staged or unstaged)

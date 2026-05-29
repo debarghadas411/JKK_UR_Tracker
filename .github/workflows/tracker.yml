@@ -1,0 +1,81 @@
+name: JKK + UR Tracker
+
+on:
+  schedule:
+    # Runs every 15 minutes. GitHub cron is best-effort; actual cadence may vary.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Allow manual runs from the GitHub Actions UI
+
+# Prevent two runs from overlapping — second run waits until first finishes.
+concurrency:
+  group: tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: write  # Needed to commit the updated map back to the repo
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so git push works without forced config
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Restore the data/ directory (SQLite DB + caches) from the last successful run.
+      # Key rotates each run so we always save a fresh entry; restore-keys picks the latest.
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data/
+          key: tracker-data-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            tracker-data-
+
+      - name: Run tracker (single cycle)
+        run: python run_once.py
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+          CI: "true"
+
+      # Checkpoint the SQLite WAL so the cache contains a clean, self-contained DB file.
+      - name: Checkpoint SQLite WAL
+        run: |
+          python - <<'EOF'
+          import sqlite3, pathlib
+          db = pathlib.Path("data/listings.db")
+          if db.exists():
+              conn = sqlite3.connect(db)
+              conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+              conn.close()
+              print("WAL checkpoint complete.")
+          else:
+              print("No DB found — skipping checkpoint.")
+          EOF
+
+      # Commit the updated map back to this branch so GitHub Pages stays current.
+      # Uses [skip ci] to avoid triggering another workflow run.
+      - name: Publish map to GitHub Pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          if git diff --cached --quiet; then
+            echo "No map changes — skipping commit."
+          else
+            git commit -m "chore: update map [skip ci]"
+            git push
+          fi
