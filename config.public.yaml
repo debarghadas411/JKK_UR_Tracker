@@ -1,0 +1,54 @@
+# JKK + UR Tracker — Public Configuration (committed to repo, no secrets)
+# Secrets (Telegram bot token / chat ID) are supplied via environment variables:
+#   TG_BOT_TOKEN and TG_CHAT_ID (set as GitHub Actions repository secrets).
+#
+# This file is loaded by run_once.py when no config.yaml is present (CI environment).
+# For local use, copy config.yaml.example → config.yaml and fill in your credentials.
+
+check_interval_minutes: 5
+
+filters:
+  # Ward / Area (区市名) — applies to BOTH JKK and UR listings
+  wards: ["新宿区", "江東区", "品川区", "江戸川区"]
+
+  # Floor plan (間取り) — applies to BOTH JKK and UR
+  floor_plans: ["2DK", "2LDK", "3DK", "3LDK"]
+
+  # Monthly rent range in yen
+  rent_min: null
+  rent_max: null
+
+  # Floor area in square metres
+  area_min: null
+  area_max: null
+
+  # Maximum building age in years (JKK only — UR does not provide this)
+  building_age_max: null
+
+  # Floor level range (now works for UR listings too)
+  floor_min: null
+  floor_max: null
+
+  # Restrict to specific sources (optional). Leave empty to include all sources.
+  # Example: ["UR"] to only get notified about UR listings
+  sources: []
+
+notifications:
+  notify_all_changes: true
+  notify_filtered_matches: true
+
+# Telegram credentials are injected from TG_BOT_TOKEN / TG_CHAT_ID env vars by run_once.py.
+# No digest in CI — digest runs on the local scheduler.
+telegram:
+  enabled: false
+  only_filtered_matches: false
+
+# UR Chintai settings
+ur:
+  enabled: true
+  tdfk: "13"
+  areas: ["01", "02", "03", "04", "05", "06"]
+
+# Transit cache settings
+transit:
+  graph_refresh_days: 90
