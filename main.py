@@ -263,9 +263,10 @@ def run_check() -> None:
         active = get_active_listings()
         save_snapshot(active)
         save_csv(active)
-        geocode_missing_listings("UR")
+        geocode_missing_listings()
         generate_map_html(get_active_listings())
-        push_map_async()
+        if _config.get("github_pages", {}).get("auto_push", True):
+            push_map_async()
         _is_first_run = False
         logger.info("=== Baseline saved. Monitoring starts next cycle. ===")
         return
@@ -289,9 +290,10 @@ def run_check() -> None:
     active = get_active_listings()
     save_snapshot(active)
     save_csv(active)
-    geocode_missing_listings("UR")
+    geocode_missing_listings()
     generate_map_html(get_active_listings())
-    push_map_async()
+    if _config.get("github_pages", {}).get("auto_push", True):
+        push_map_async()
 
     n_cfg = _config.get("notifications", {})
     notify_all: bool = n_cfg.get("notify_all_changes", True)
@@ -350,7 +352,8 @@ def run_region_cache_refresh() -> None:
     refresh_region_cache(wards)
     save_csv(active)
     generate_map_html(active)
-    push_map_async()
+    if _config.get("github_pages", {}).get("auto_push", True):
+        push_map_async()
     logger.info("Region cache refresh complete (%d wards).", len(wards))
 
 
@@ -390,13 +393,17 @@ def main() -> None:
 
     tg_cfg = _config.get("telegram", {})
     digest_time = tg_cfg.get("digest_time", "")
-    if tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id") and digest_time:
-        try:
-            schedule_daily(run_digest, digest_time)
-        except Exception as exc:
-            logger.warning(
-                "Invalid telegram.digest_time %r — daily digest disabled: %s", digest_time, exc
-            )
+    if tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id"):
+        if digest_time:
+            try:
+                schedule_daily(run_digest, digest_time)
+            except Exception as exc:
+                logger.warning(
+                    "Invalid telegram.digest_time %r — daily digest disabled: %s", digest_time, exc
+                )
+
+        from notifications.telegram_commands import start_polling
+        start_polling(tg_cfg["bot_token"], str(tg_cfg["chat_id"]))
 
     schedule_every_hours(run_region_cache_refresh, 1)
 
