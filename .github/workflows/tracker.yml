@@ -67,7 +67,6 @@ jobs:
           EOF
 
       # Commit the updated map back to this branch so GitHub Pages stays current.
-      # Uses [skip ci] to avoid triggering another workflow run.
       - name: Publish map to GitHub Pages
         run: |
           git config user.name "github-actions[bot]"
@@ -76,7 +75,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No map changes — skipping commit."
           else
-            git commit -m "chore: update map [skip ci]"
+            git commit -m "chore: update map"
             git pull --rebase origin main
             git push origin main
           fi
