@@ -6,6 +6,7 @@ The map is saved to  data/map.html  and is fully self-contained (CDN assets only
 
 import json
 import logging
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -84,6 +85,9 @@ def generate_map_html(listings: list[dict]) -> None:
     total_listings = len(listings)
 
     listings_json = json.dumps(features, ensure_ascii=False)
+
+    JST = timezone(timedelta(hours=9))
+    updated_str = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -206,7 +210,8 @@ html, body, #map {{ width: 100%; height: 100vh; font-family: sans-serif; }}
   <input id="search-box" type="text" placeholder="Search by name or ward…">
   <div id="stats">
     Showing <b id="stat-shown">{total_with_coords}</b> of <b>{total_listings}</b> listings
-    ({total_listings - total_with_coords} without coordinates)
+    ({total_listings - total_with_coords} without coordinates)<br>
+    🕐 Updated: <b>{updated_str}</b>
   </div>
 </div>
 
