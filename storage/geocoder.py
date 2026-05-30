@@ -6,7 +6,9 @@ only looked up once.  A maximum of MAX_PER_CYCLE new addresses are geocoded
 per scrape cycle to avoid delaying the normal check cadence.
 """
 
+import json
 import logging
+import pathlib
 import time
 from typing import Optional
 
@@ -15,6 +17,7 @@ import requests
 from .database import (
     get_geocode_cache_entry,
     get_listings_missing_geocode,
+    geocode_cache_count,
     update_listing_geocode,
     upsert_geocode_cache,
 )
@@ -24,6 +27,24 @@ logger = logging.getLogger(__name__)
 GSI_URL = "https://msearch.gsi.go.jp/address-search/AddressSearch"
 MAX_PER_CYCLE = 10
 INTER_CALL_DELAY = 0.6  # seconds between API calls
+
+SEED_FILE = pathlib.Path(__file__).parent.parent / "geocode_seed.json"
+
+
+def load_geocode_seed() -> None:
+    """
+    Import geocode_seed.json into the DB cache when the cache is empty.
+    This lets CI start with all known addresses pre-resolved without API calls.
+    """
+    if not SEED_FILE.exists():
+        return
+    if geocode_cache_count() > 0:
+        return  # Cache already populated — nothing to do
+
+    seed = json.loads(SEED_FILE.read_text(encoding="utf-8"))
+    for address, coords in seed.items():
+        upsert_geocode_cache(address, coords["lat"], coords["lon"])
+    logger.info("Geocoder: loaded %d addresses from seed file.", len(seed))
 
 
 def _geocode_address(address: str) -> Optional[tuple]:

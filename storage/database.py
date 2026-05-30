@@ -413,3 +413,9 @@ def upsert_geocode_cache(address: str, latitude: float, longitude: float) -> Non
             (address, latitude, longitude, now),
         )
         conn.commit()
+
+
+def geocode_cache_count() -> int:
+    """Return the number of entries in the geocode cache."""
+    with _connect() as conn:
+        return conn.execute("SELECT COUNT(*) FROM geocode_cache").fetchone()[0]

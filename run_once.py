@@ -87,6 +87,9 @@ def main() -> None:
     from storage.database import init_db
     init_db()
 
+    from storage.geocoder import load_geocode_seed
+    load_geocode_seed()
+
     logger.info("run_once: starting single check cycle (CI=%s)", os.environ.get("CI", "false"))
     tracker_main.run_check()
 
