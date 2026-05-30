@@ -180,14 +180,18 @@ def _send_results(bot_token: str, chat_id: str, cmd_type: str, arg, results: lis
     """
     from notifications.telegram_notify import _fmt_listing
 
-    label_map = {
-        "ward":  f"Ward: {arg}",
-        "rent":  f"Base rent ≤ ¥{int(arg):,}",
-        "size":  f"Area ≥ {arg:g} m²",
-        "plan":  f"Floor plan ≥ {str(arg).upper()}",
-        "from":  f"Active since {arg[:4]}-{arg[4:6]}-{arg[6:]}",
-    }
-    label = label_map.get(cmd_type, cmd_type)
+    if cmd_type == "ward":
+        label = f"Ward: {arg}"
+    elif cmd_type == "rent":
+        label = f"Base rent ≤ ¥{int(arg):,}"
+    elif cmd_type == "size":
+        label = f"Area ≥ {float(arg):g} m²"
+    elif cmd_type == "plan":
+        label = f"Floor plan ≥ {str(arg).upper()}"
+    elif cmd_type == "from":
+        label = f"Active since {str(arg)[:4]}-{str(arg)[4:6]}-{str(arg)[6:]}"
+    else:
+        label = cmd_type
     total = len(results)
     shown = results[:MAX_RESULTS]
 
@@ -214,6 +218,9 @@ def _load_offset() -> int:
 
 
 def _save_offset(offset: int) -> None:
+    if not isinstance(offset, int):
+        logger.warning("_save_offset called with non-int %r — ignoring.", offset)
+        return
     try:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         OFFSET_FILE.write_text(str(offset))
