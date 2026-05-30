@@ -263,9 +263,10 @@ def run_check() -> None:
         active = get_active_listings()
         save_snapshot(active)
         save_csv(active)
-        geocode_missing_listings("UR")
+        geocode_missing_listings()
         generate_map_html(get_active_listings())
-        push_map_async()
+        if _config.get("github_pages", {}).get("auto_push", True):
+            push_map_async()
         _is_first_run = False
         logger.info("=== Baseline saved. Monitoring starts next cycle. ===")
         return
@@ -289,9 +290,10 @@ def run_check() -> None:
     active = get_active_listings()
     save_snapshot(active)
     save_csv(active)
-    geocode_missing_listings("UR")
+    geocode_missing_listings()
     generate_map_html(get_active_listings())
-    push_map_async()
+    if _config.get("github_pages", {}).get("auto_push", True):
+        push_map_async()
 
     n_cfg = _config.get("notifications", {})
     notify_all: bool = n_cfg.get("notify_all_changes", True)
@@ -350,7 +352,8 @@ def run_region_cache_refresh() -> None:
     refresh_region_cache(wards)
     save_csv(active)
     generate_map_html(active)
-    push_map_async()
+    if _config.get("github_pages", {}).get("auto_push", True):
+        push_map_async()
     logger.info("Region cache refresh complete (%d wards).", len(wards))
 
 

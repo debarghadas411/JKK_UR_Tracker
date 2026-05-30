@@ -57,3 +57,8 @@ ur:
 # Transit cache settings
 transit:
   graph_refresh_days: 90
+
+# GitHub Pages auto-push after each map update.
+# Set false to disable on local machine (let GitHub Actions handle it instead).
+github_pages:
+  auto_push: true
