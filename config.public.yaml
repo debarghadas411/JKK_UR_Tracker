@@ -16,10 +16,10 @@ filters:
 
   # Monthly rent range in yen
   rent_min: null
-  rent_max: null
+  rent_max: 120000
 
   # Floor area in square metres
-  area_min: null
+  area_min: 45
   area_max: null
 
   # Maximum building age in years (JKK only — UR does not provide this)
