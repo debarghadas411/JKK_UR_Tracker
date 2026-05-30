@@ -89,6 +89,13 @@ def main() -> None:
 
     logger.info("run_once: starting single check cycle (CI=%s)", os.environ.get("CI", "false"))
     tracker_main.run_check()
+
+    # Process any Telegram commands accumulated since the last run.
+    tg_cfg = cfg.get("telegram", {})
+    if tg_cfg.get("enabled") and tg_cfg.get("bot_token") and tg_cfg.get("chat_id"):
+        from notifications.telegram_commands import handle_commands_once
+        handle_commands_once(tg_cfg["bot_token"], str(tg_cfg["chat_id"]))
+
     logger.info("run_once: cycle complete — exiting.")
 
 
