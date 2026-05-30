@@ -40,9 +40,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/
-          key: tracker-data-${{ github.run_id }}-${{ github.run_attempt }}
+          key: tracker-data-v2-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            tracker-data-
+            tracker-data-v2-
 
       - name: Run tracker (single cycle)
         run: python run_once.py
