@@ -77,5 +77,6 @@ jobs:
             echo "No map changes — skipping commit."
           else
             git commit -m "chore: update map [skip ci]"
-            git push
+            git pull --rebase origin ci/github-actions
+            git push origin ci/github-actions
           fi
