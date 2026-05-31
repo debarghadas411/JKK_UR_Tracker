@@ -6,106 +6,197 @@ import streamlit.components.v1 as components
 # 1. Page Configuration
 st.set_page_config(
     page_title="JKK + UR Housing Tracker",
-    page_icon="🏠",
+    page_icon="🏙️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for a more polished look
+# Custom CSS for Premium Dark Theme & Animations
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
+    /* Global Styles */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
     }
-    .stMetric {
-        background-color: #ffffff;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
-    .stDataFrame {
-        border-radius: 10px;
+    .main .block-container {
+        animation: fadeIn 0.8s ease-out;
     }
-    h1 {
-        color: #1e3a8a;
-        font-weight: 800;
+
+    /* Metrics Styling */
+    [data-testid="stMetric"] {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        padding: 20px;
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
     }
-    .sidebar .sidebar-content {
-        background-color: #ffffff;
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-5px);
+        border-color: #3b82f6;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: #0f172a;
+        border-right: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Tab Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #1e293b;
+        border-radius: 10px 10px 0 0;
+        gap: 1px;
+        padding: 10px 20px;
+        color: #94a3b8;
+        transition: all 0.2s ease;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #3b82f6 !important;
+        color: white !important;
+    }
+
+    /* Buttons */
+    .stButton>button {
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    .stButton>button:hover {
+        transform: scale(1.02);
+    }
+
+    /* Header Colors */
+    h1 { background: linear-gradient(90deg, #3b82f6, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+    h2, h3 { color: #f8fafc; font-weight: 600; }
+    
     </style>
 """, unsafe_allow_html=True)
 
-# Constants
+# Constants & Language Mapping
 PROJECT_ROOT = Path(__file__).parent
 DATA_DIR = PROJECT_ROOT / "data"
 MAP_FILE = PROJECT_ROOT / "docs" / "index.html"
-FILE_MAP = {
-    "English 🇬🇧": DATA_DIR / "listings_english.tsv",
-    "Japanese 🇯🇵": DATA_DIR / "listings.tsv"
+
+LANG_CONFIG = {
+    "English 🇬🇧": {
+        "file": DATA_DIR / "listings_english.tsv",
+        "col_name": "Building Name",
+        "col_ward": "Ward / Area",
+        "col_rent": "Monthly Rent (¥)",
+        "col_source": "Source",
+        "col_area": "Area (sqm)",
+        "col_floor_plan": "Floor Plan",
+        "col_url": "Detail URL",
+        "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Source", "Detail URL"]
+    },
+    "Japanese 🇯🇵": {
+        "file": DATA_DIR / "listings.tsv",
+        "col_name": "住宅名 (Building Name)",
+        "col_ward": "地域 (Ward)",
+        "col_rent": "家賃円 (Rent ¥)",
+        "col_source": "ソース (Source)",
+        "col_area": "床面積㎡ (Area sqm)",
+        "col_floor_plan": "間取り (Floor Plan)",
+        "col_url": "詳細URL (Detail URL)",
+        "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "ソース (Source)", "詳細URL (Detail URL)"]
+    }
 }
 
-# 2. Sidebar Configuration
+# 2. Sidebar Configuration & Global Filters
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/home.png", width=80)
-    st.title("Tracker Control")
+    st.image("https://img.icons8.com/fluency/96/city-buildings.png", width=80)
+    st.title("Search Hub")
     
-    st.subheader("🌐 Localization")
     selected_lang_label = st.radio(
-        "Select Language",
-        options=list(FILE_MAP.keys()),
-        index=0,
-        help="Choose the language for the data table."
+        "Localization",
+        options=list(LANG_CONFIG.keys()),
+        index=0
     )
     
+    cfg = LANG_CONFIG[selected_lang_label]
+    
     st.divider()
-    st.caption("Auto-updating from VM every 10 mins")
+    st.subheader("🛠️ Quick Filters")
 
-# 3. Optimized Data Loading
+# 3. Optimized Data Loading & Filtering
 @st.cache_data
 def load_data(file_path):
     try:
-        if not file_path.exists():
-            return None
-        df = pd.read_csv(file_path, sep='\t')
-        return df
-    except Exception:
-        return None
+        if not file_path.exists(): return None
+        return pd.read_csv(file_path, sep='\t')
+    except Exception: return None
 
-# Load the selected dataset
-df = load_data(FILE_MAP[selected_lang_label])
+raw_df = load_data(cfg["file"])
 
-# 4. Main UI Layout
-st.title("🏙️ JKK + UR Tokyo Housing")
+if raw_df is not None:
+    # Build Sidebar Filters Dynamically
+    with st.sidebar:
+        # Rent Filter
+        min_rent = int(raw_df[cfg["col_rent"]].min())
+        max_rent = int(raw_df[cfg["col_rent"]].max())
+        rent_range = st.slider(
+            "Rent Range (¥)", 
+            min_rent, max_rent, (min_rent, max_rent),
+            step=5000
+        )
+        
+        # Ward Filter
+        wards = sorted(raw_df[cfg["col_ward"]].unique())
+        selected_wards = st.multiselect("Select Wards", options=wards, default=[])
+        
+        # Source Filter
+        sources = sorted(raw_df[cfg["col_source"]].unique())
+        selected_sources = st.multiselect("Data Source", options=sources, default=sources)
 
-# Create Tabs
-tab_data, tab_map = st.tabs(["📊 Data Explorer", "🗺️ Interactive Map"])
+    # Apply Filters
+    df = raw_df.copy()
+    df = df[
+        (df[cfg["col_rent"]] >= rent_range[0]) & 
+        (df[cfg["col_rent"]] <= rent_range[1]) &
+        (df[cfg["col_source"]].isin(selected_sources))
+    ]
+    if selected_wards:
+        df = df[df[cfg["col_ward"]].isin(selected_wards)]
 
-with tab_data:
-    if df is not None:
+    # 4. Main UI Layout
+    st.title("🏙️ JKK + UR Tokyo Navigator")
+
+    tab_data, tab_map = st.tabs(["📊 Housing Listings", "🗺️ Vacancy Map"])
+
+    with tab_data:
         # Metrics Row
         m_col1, m_col2, m_col3 = st.columns(3)
         with m_col1:
-            st.metric("Available Rooms", len(df), delta=None)
+            st.metric("Found Rooms", len(df))
         with m_col2:
-            sources = df['source'].value_counts() if 'source' in df.columns else {}
-            jkk_count = sources.get('JKK', 0)
-            st.metric("JKK Listings", jkk_count)
+            avg_rent = int(df[cfg["col_rent"]].mean()) if len(df) > 0 else 0
+            st.metric("Avg Rent", f"¥{avg_rent:,}")
         with m_col3:
-            ur_count = sources.get('UR', 0)
-            st.metric("UR Listings", ur_count)
+            jkk_count = len(df[df[cfg["col_source"]] == "JKK"])
+            st.metric("JKK / UR Split", f"{jkk_count} JKK | {len(df)-jkk_count} UR")
 
-        # Filters Expander
-        with st.expander("🔍 Advanced Column Filters", expanded=False):
+        # Column Selection
+        with st.expander("⚙️ Customize Table Columns", expanded=False):
             all_columns = df.columns.tolist()
-            # Default columns to show (cleaner view)
-            default_cols = [c for c in ["name", "rent", "floor_plan", "ward", "area", "floor", "source", "detail_url"] if c in all_columns]
-            if not default_cols: default_cols = all_columns
-            
             selected_columns = st.multiselect(
-                "Select columns to display:",
+                "Columns to display:",
                 options=all_columns,
-                default=default_cols
+                default=[c for c in cfg["defaults"] if c in all_columns]
             )
 
         # Main Table
@@ -115,30 +206,31 @@ with tab_data:
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "detail_url": st.column_config.LinkColumn("Listing Link"),
-                    "rent": st.column_config.NumberColumn("Rent (¥)", format="%d"),
+                    cfg["col_url"]: st.column_config.LinkColumn("🔗 View Listing"),
+                    cfg["col_rent"]: st.column_config.NumberColumn("Rent", format="¥%d"),
+                    cfg["col_area"]: st.column_config.NumberColumn("Area", format="%.1f ㎡"),
                 }
             )
         else:
             st.warning("Please select at least one column.")
-    else:
-        st.error("Data files not found. Please wait for the tracker to complete a cycle.")
 
-with tab_map:
-    st.subheader("Live Vacancy Map")
-    if MAP_FILE.exists():
-        with open(MAP_FILE, 'r', encoding='utf-8') as f:
-            html_content = f.read()
-        
-        components.html(html_content, height=700, scrolling=True)
-        st.caption("Full screen map available at: [GitHub Pages](https://debarghadas411.github.io/JKK_UR_Tracker/)")
-    else:
-        st.info("Generating map... Please refresh in a moment.")
+    with tab_map:
+        st.subheader("Interactive Hotspot Map")
+        if MAP_FILE.exists():
+            with open(MAP_FILE, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+            components.html(html_content, height=750, scrolling=True)
+            st.caption("✨ Full-screen experience available via GitHub Pages.")
+        else:
+            st.info("Map data is being synchronized... Please refresh shortly.")
+
+else:
+    st.error(f"⚠️ Critical Error: Could not find '{cfg['file']}'. Ensure the tracker has run successfully.")
 
 # Footer
 st.divider()
 st.markdown("""
-<div style='text-align: center'>
-    <p>Data refreshed automatically | <a href='https://github.com/debarghadas411/JKK_UR_Tracker'>Project Repository</a></p>
+<div style='text-align: center; color: #64748b; font-size: 0.8rem;'>
+    Designed for JKK + UR Tokyo Tracker • Auto-refresh active • <a href='https://github.com/debarghadas411/JKK_UR_Tracker' style='color: #3b82f6;'>Source</a>
 </div>
 """, unsafe_allow_html=True)
