@@ -101,8 +101,9 @@ LANG_CONFIG = {
         "col_source": "Source",
         "col_area": "Area (sqm)",
         "col_floor_plan": "Floor Plan",
+        "col_dist": "Distance to Shimbashi (km)",
         "col_url": "Detail URL",
-        "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Source", "Detail URL"]
+        "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Distance to Shimbashi (km)", "Source", "Detail URL"]
     },
     "Japanese 🇯🇵": {
         "file": DATA_DIR / "listings.tsv",
@@ -112,8 +113,9 @@ LANG_CONFIG = {
         "col_source": "ソース (Source)",
         "col_area": "床面積㎡ (Area sqm)",
         "col_floor_plan": "間取り (Floor Plan)",
+        "col_dist": "新橋駅距離km (Dist to Shimbashi km)",
         "col_url": "詳細URL (Detail URL)",
-        "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "ソース (Source)", "詳細URL (Detail URL)"]
+        "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "新橋駅距離km (Dist to Shimbashi km)", "ソース (Source)", "詳細URL (Detail URL)"]
     }
 }
 
@@ -148,18 +150,45 @@ if raw_df is not None:
     # Build Sidebar Filters Dynamically
     with st.sidebar:
         # Rent Filter
-        min_rent = int(raw_df[cfg["col_rent"]].min())
-        max_rent = int(raw_df[cfg["col_rent"]].max())
-        # Use a slightly different step or just ensure it's clean
+        min_rent = int(raw_df[cfg["col_rent"]].min()) if not raw_df.empty else 0
+        max_rent = int(raw_df[cfg["col_rent"]].max()) if not raw_df.empty else 1000000
+        if min_rent == max_rent: max_rent = min_rent + 1000
         rent_range = st.slider(
             "Rent Range (¥)", 
             min_rent, max_rent, (min_rent, max_rent),
             step=1000
         )
+
+        # Area Filter
+        min_area = float(raw_df[cfg["col_area"]].min()) if not raw_df.empty else 0.0
+        max_area = float(raw_df[cfg["col_area"]].max()) if not raw_df.empty else 200.0
+        if min_area == max_area: max_area = min_area + 10.0
+        area_range = st.slider(
+            "Area Range (sqm)",
+            min_area, max_area, (min_area, max_area),
+            step=1.0
+        )
+
+        # Distance to Shimbashi Filter
+        if cfg["col_dist"] in raw_df.columns:
+            min_dist = float(raw_df[cfg["col_dist"]].min()) if not raw_df.empty else 0.0
+            max_dist = float(raw_df[cfg["col_dist"]].max()) if not raw_df.empty else 50.0
+            if min_dist == max_dist: max_dist = min_dist + 5.0
+            dist_range = st.slider(
+                "Dist to Shimbashi (km)",
+                min_dist, max_dist, (min_dist, max_dist),
+                step=0.5
+            )
+        else:
+            dist_range = (0.0, 1000.0)
         
         # Ward Filter
-        wards = sorted(raw_df[cfg["col_ward"]].unique())
+        wards = sorted(raw_df[cfg["col_ward"]].dropna().unique())
         selected_wards = st.multiselect("Select Wards", options=wards, default=[])
+
+        # Floor Plan Filter
+        floor_plans = sorted(raw_df[cfg["col_floor_plan"]].dropna().unique())
+        selected_floor_plans = st.multiselect("Floor Plans", options=floor_plans, default=[])
         
         # Source Filter
         sources = sorted(raw_df[cfg["col_source"]].unique())
@@ -170,10 +199,22 @@ if raw_df is not None:
     df = df[
         (df[cfg["col_rent"]] >= rent_range[0]) & 
         (df[cfg["col_rent"]] <= rent_range[1]) &
+        (df[cfg["col_area"]] >= area_range[0]) &
+        (df[cfg["col_area"]] <= area_range[1]) &
         (df[cfg["col_source"]].isin(selected_sources))
     ]
+    
+    if cfg["col_dist"] in df.columns:
+        df = df[
+            (df[cfg["col_dist"]] >= dist_range[0]) &
+            (df[cfg["col_dist"]] <= dist_range[1])
+        ]
+
     if selected_wards:
         df = df[df[cfg["col_ward"]].isin(selected_wards)]
+    
+    if selected_floor_plans:
+        df = df[df[cfg["col_floor_plan"]].isin(selected_floor_plans)]
 
     # 4. Main UI Layout
     st.title("🏙️ JKK + UR Tokyo Navigator")
