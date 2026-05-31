@@ -1,10 +1,7 @@
 name: JKK + UR Tracker
 
 on:
-  schedule:
-    # Runs every 15 minutes. GitHub cron is best-effort; actual cadence may vary.
-    - cron: '*/15 * * * *'
-  workflow_dispatch:  # Allow manual runs from the GitHub Actions UI
+  workflow_dispatch:  # Manual runs only — scheduled runs disabled (VM handles this now)
 
 # Prevent two runs from overlapping — second run waits until first finishes.
 concurrency:
