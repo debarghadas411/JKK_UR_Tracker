@@ -102,8 +102,9 @@ LANG_CONFIG = {
         "col_area": "Area (sqm)",
         "col_floor_plan": "Floor Plan",
         "col_dist": "Distance to Shimbashi (km)",
+        "col_time": "Train Time to Shimbashi (min)",
         "col_url": "Detail URL",
-        "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Distance to Shimbashi (km)", "Source", "Detail URL"]
+        "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Train Time to Shimbashi (min)", "Source", "Detail URL"]
     },
     "Japanese 🇯🇵": {
         "file": DATA_DIR / "listings.tsv",
@@ -114,8 +115,9 @@ LANG_CONFIG = {
         "col_area": "床面積㎡ (Area sqm)",
         "col_floor_plan": "間取り (Floor Plan)",
         "col_dist": "新橋駅距離km (Dist to Shimbashi km)",
+        "col_time": "新橋駅電車分 (Train min to Shimbashi)",
         "col_url": "詳細URL (Detail URL)",
-        "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "新橋駅距離km (Dist to Shimbashi km)", "ソース (Source)", "詳細URL (Detail URL)"]
+        "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "新橋駅電車分 (Train min to Shimbashi)", "ソース (Source)", "詳細URL (Detail URL)"]
     }
 }
 
@@ -181,6 +183,19 @@ if raw_df is not None:
             )
         else:
             dist_range = (0.0, 1000.0)
+
+        # Time to Shimbashi Filter
+        if cfg["col_time"] in raw_df.columns:
+            min_time = int(raw_df[cfg["col_time"]].min()) if not raw_df.empty else 0
+            max_time = int(raw_df[cfg["col_time"]].max()) if not raw_df.empty else 120
+            if min_time == max_time: max_time = min_time + 10
+            time_range = st.slider(
+                "Time to Shimbashi (min)",
+                min_time, max_time, (min_time, max_time),
+                step=5
+            )
+        else:
+            time_range = (0, 1000)
         
         # Ward Filter
         wards = sorted(raw_df[cfg["col_ward"]].dropna().unique())
@@ -208,6 +223,12 @@ if raw_df is not None:
         df = df[
             (df[cfg["col_dist"]] >= dist_range[0]) &
             (df[cfg["col_dist"]] <= dist_range[1])
+        ]
+
+    if cfg["col_time"] in df.columns:
+        df = df[
+            (df[cfg["col_time"]] >= time_range[0]) &
+            (df[cfg["col_time"]] <= time_range[1])
         ]
 
     if selected_wards:
