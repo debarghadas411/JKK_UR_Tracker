@@ -118,6 +118,7 @@ LANG_CONFIG = {
 }
 
 # 2. Sidebar Configuration & Global Filters
+# Deployment Sync Trigger: v1.0.1
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/city-buildings.png", width=80)
     st.title("Search Hub")
@@ -149,10 +150,11 @@ if raw_df is not None:
         # Rent Filter
         min_rent = int(raw_df[cfg["col_rent"]].min())
         max_rent = int(raw_df[cfg["col_rent"]].max())
+        # Use a slightly different step or just ensure it's clean
         rent_range = st.slider(
             "Rent Range (¥)", 
             min_rent, max_rent, (min_rent, max_rent),
-            step=5000
+            step=1000
         )
         
         # Ward Filter
