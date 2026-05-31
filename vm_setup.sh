@@ -5,12 +5,13 @@
 #   bash vm_setup.sh
 #
 # What this script does:
-#   1. Installs Python 3.11, git, and other system packages
-#   2. Clones the repo (or skips if already present)
-#   3. Installs Python dependencies into a virtualenv
-#   4. Generates a GitHub deploy key and prints the public key (add to repo)
-#   5. Prompts for Telegram credentials and creates config.yaml
-#   6. Installs and starts a systemd service (runs main.py on boot, restarts on crash)
+#   1. Creates a 1GB swap file (critical for e2-micro's 1GB RAM)
+#   2. Installs Python 3.11, git, and other system packages
+#   3. Clones the repo (or skips if already present)
+#   4. Installs Python dependencies into a virtualenv
+#   5. Generates a GitHub deploy key and prints the public key (add to repo)
+#   6. Prompts for Telegram credentials and creates config.yaml
+#   7. Installs and starts a systemd service (runs main.py on boot, restarts on crash)
 #
 # After running this script, the tracker is live. Map pushes go to GitHub Pages.
 # Telegram notifications and command polling work immediately.
@@ -22,10 +23,30 @@ INSTALL_DIR="$HOME/JKK_UR_Tracker"
 VENV_DIR="$INSTALL_DIR/.venv"
 SERVICE_NAME="jkk-tracker"
 SSH_KEY="$HOME/.ssh/github_deploy"
+SWAP_FILE="/swapfile"
+SWAP_SIZE="1G"   # Adds 1GB swap — safe buffer for e2-micro's 1GB RAM
 
 echo "============================================================"
 echo "  JKK + UR Tracker — VM Setup"
 echo "============================================================"
+echo ""
+
+# ── 1. Swap file (important for e2-micro 1GB RAM) ─────────────────────────────
+if [ ! -f "$SWAP_FILE" ]; then
+    echo "▶ Creating ${SWAP_SIZE} swap file (e2-micro memory buffer)..."
+    sudo fallocate -l "$SWAP_SIZE" "$SWAP_FILE"
+    sudo chmod 600 "$SWAP_FILE"
+    sudo mkswap "$SWAP_FILE"
+    sudo swapon "$SWAP_FILE"
+    # Make swap permanent across reboots
+    echo "$SWAP_FILE none swap sw 0 0" | sudo tee -a /etc/fstab > /dev/null
+    # Reduce swappiness — only use swap under real pressure
+    echo "vm.swappiness=10" | sudo tee /etc/sysctl.d/99-swappiness.conf > /dev/null
+    sudo sysctl -p /etc/sysctl.d/99-swappiness.conf > /dev/null
+    echo "  Swap active: $(free -h | grep Swap)"
+else
+    echo "▶ Swap file already exists — skipping."
+fi
 echo ""
 
 # ── 1. System packages ────────────────────────────────────────────────────────
