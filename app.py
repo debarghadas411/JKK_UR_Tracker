@@ -103,6 +103,7 @@ LANG_CONFIG = {
         "col_floor_plan": "Floor Plan",
         "col_dist": "Distance to Shimbashi (km)",
         "col_time": "Train Time to Shimbashi (min)",
+        "col_first_seen": "First Seen (UTC)",
         "col_url": "Detail URL",
         "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Train Time to Shimbashi (min)", "Source", "Detail URL"]
     },
@@ -116,6 +117,7 @@ LANG_CONFIG = {
         "col_floor_plan": "間取り (Floor Plan)",
         "col_dist": "新橋駅距離km (Dist to Shimbashi km)",
         "col_time": "新橋駅電車分 (Train min to Shimbashi)",
+        "col_first_seen": "初回確認 (First Seen UTC)",
         "col_url": "詳細URL (Detail URL)",
         "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "新橋駅電車分 (Train min to Shimbashi)", "ソース (Source)", "詳細URL (Detail URL)"]
     }
@@ -147,7 +149,8 @@ with st.sidebar:
 def load_data(file_path):
     try:
         if not file_path.exists(): return None
-        return pd.read_csv(file_path, sep='\t')
+        df = pd.read_csv(file_path, sep='\t')
+        return df
     except Exception: return None
 
 raw_df = load_data(cfg["file"])
@@ -213,6 +216,17 @@ if raw_df is not None:
         sources = sorted(raw_df[cfg["col_source"]].unique())
         selected_sources = st.multiselect("Data Source", options=sources, default=sources)
 
+        # First Seen Date Range Filter
+        first_seen_dates = pd.to_datetime(raw_df[cfg["col_first_seen"]], utc=True, errors="coerce").dt.date
+        min_date = first_seen_dates.min()
+        max_date = first_seen_dates.max()
+        date_range = st.date_input(
+            "First Seen Date Range",
+            value=(min_date, max_date),
+            min_value=min_date,
+            max_value=max_date,
+        )
+
     # Apply Filters
     df = raw_df.copy()
     df = df[
@@ -240,6 +254,11 @@ if raw_df is not None:
     
     if selected_floor_plans:
         df = df[df[cfg["col_floor_plan"]].isin(selected_floor_plans)]
+
+    # Apply First Seen date range filter
+    if len(date_range) == 2:
+        first_seen = pd.to_datetime(df[cfg["col_first_seen"]], utc=True, errors="coerce").dt.date
+        df = df[(first_seen >= date_range[0]) & (first_seen <= date_range[1])]
 
     # 4. Main UI Layout
     st.title("🏙️ JKK + UR Tokyo Navigator")
