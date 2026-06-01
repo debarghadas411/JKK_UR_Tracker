@@ -104,6 +104,7 @@ LANG_CONFIG = {
         "col_dist": "Distance to Shimbashi (km)",
         "col_time": "Train Time to Shimbashi (min)",
         "col_first_seen": "First Seen (UTC)",
+        "col_built_year": "Built Year",
         "col_url": "Detail URL",
         "defaults": ["Building Name", "Monthly Rent (¥)", "Floor Plan", "Ward / Area", "Area (sqm)", "Train Time to Shimbashi (min)", "Source", "Detail URL"]
     },
@@ -118,6 +119,7 @@ LANG_CONFIG = {
         "col_dist": "新橋駅距離km (Dist to Shimbashi km)",
         "col_time": "新橋駅電車分 (Train min to Shimbashi)",
         "col_first_seen": "初回確認 (First Seen UTC)",
+        "col_built_year": "竣工年 (Built Year)",
         "col_url": "詳細URL (Detail URL)",
         "defaults": ["住宅名 (Building Name)", "家賃円 (Rent ¥)", "間取り (Floor Plan)", "地域 (Ward)", "床面積㎡ (Area sqm)", "新橋駅電車分 (Train min to Shimbashi)", "ソース (Source)", "詳細URL (Detail URL)"]
     }
@@ -227,6 +229,17 @@ if raw_df is not None:
             max_value=max_date,
         )
 
+        # Built Year Filter
+        built_years = raw_df[cfg["col_built_year"]].dropna().astype(int)
+        min_year = int(built_years.min())
+        max_year = int(built_years.max())
+        if min_year == max_year: max_year = min_year + 1
+        year_range = st.slider(
+            "Built Year",
+            min_year, max_year, (min_year, max_year),
+            step=1
+        )
+
     # Apply Filters
     df = raw_df.copy()
     df = df[
@@ -259,6 +272,12 @@ if raw_df is not None:
     if len(date_range) == 2:
         first_seen = pd.to_datetime(df[cfg["col_first_seen"]], utc=True, errors="coerce").dt.date
         df = df[(first_seen >= date_range[0]) & (first_seen <= date_range[1])]
+
+    # Apply Built Year filter
+    df = df[
+        (df[cfg["col_built_year"]].fillna(0).astype(int) >= year_range[0]) &
+        (df[cfg["col_built_year"]].fillna(0).astype(int) <= year_range[1])
+    ]
 
     # 4. Main UI Layout
     st.title("🏙️ JKK + UR Tokyo Navigator")
