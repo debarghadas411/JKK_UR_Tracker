@@ -136,10 +136,14 @@ with st.sidebar:
     cfg = LANG_CONFIG[selected_lang_label]
     
     st.divider()
+    if st.button("🔄 Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
+    st.divider()
     st.subheader("🛠️ Quick Filters")
 
 # 3. Optimized Data Loading & Filtering
-@st.cache_data
+@st.cache_data(ttl=300)  # Re-read from disk every 5 minutes
 def load_data(file_path):
     try:
         if not file_path.exists(): return None
