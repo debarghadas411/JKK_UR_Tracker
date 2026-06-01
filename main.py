@@ -56,13 +56,35 @@ from storage.region_cache import refresh_region_cache
 from storage.rooms_json import lookup_building
 from storage.snapshot import save_snapshot
 
+import json
+
 logger = logging.getLogger(__name__)
+
+DIGEST_STATS_FILE = DATA_DIR / "digest_stats.json"
 
 _session = None
 _config: dict = {}
 _is_first_run: bool = True
 # Accumulates post-suppression change counts between digest sends.
 _digest_stats: dict = {"new": 0, "removed": 0, "updated": 0}
+
+
+def load_digest_stats() -> None:
+    global _digest_stats
+    if DIGEST_STATS_FILE.exists():
+        try:
+            with DIGEST_STATS_FILE.open("r", encoding="utf-8") as f:
+                _digest_stats = json.load(f)
+        except Exception as exc:
+            logger.warning("Could not load digest stats: %s", exc)
+
+
+def save_digest_stats() -> None:
+    try:
+        with DIGEST_STATS_FILE.open("w", encoding="utf-8") as f:
+            json.dump(_digest_stats, f)
+    except Exception as exc:
+        logger.warning("Could not save digest stats: %s", exc)
 
 
 def load_config() -> dict:
@@ -286,6 +308,7 @@ def run_check() -> None:
     _digest_stats["new"] += len(change_report.get("new", []))
     _digest_stats["removed"] += len(change_report.get("removed", []))
     _digest_stats["updated"] += len(change_report.get("updated", []))
+    save_digest_stats()
 
     active = get_active_listings()
     save_snapshot(active)
@@ -377,10 +400,12 @@ def run_digest() -> None:
         changes_since_last_digest=_digest_stats.copy(),
     )
     _digest_stats = {"new": 0, "removed": 0, "updated": 0}
+    save_digest_stats()
 
 
 def main() -> None:
     setup_logging()
+    load_digest_stats()
 
     global _config
     _config = load_config()

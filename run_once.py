@@ -87,6 +87,8 @@ def main() -> None:
     from storage.database import init_db
     init_db()
 
+    tracker_main.load_digest_stats()
+
     from storage.geocoder import load_geocode_seed
     load_geocode_seed()
 
